@@ -42,8 +42,6 @@ export default async function handler(req, res) {
 
     const form = new FormData();
     form.append("title", card.name || "Untitled");
-    form.append("note_type", "note/mixed");
-    form.append("note_color", card.color || "#FFFFFF");
     form.append("content", html);
 
     const updateResponse = await zohoRequest(
