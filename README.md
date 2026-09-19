@@ -12,3 +12,5 @@ It is used to inspect Zoho Notebook's instant notification payload before enabli
 No API keys, OAuth tokens, client secrets, or personal notebook IDs belong in this repository.
 
 Deployment is managed by Vercel from the main branch.
+
+Environment variables configured for production deployment.
