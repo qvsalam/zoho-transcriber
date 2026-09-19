@@ -43,11 +43,7 @@ export default async function handler(req, res) {
     const meta = {
       name: card.name || "Untitled",
       type: "note/mixed",
-      content: html,
-      version_notes: {
-        appName: "Vercel",
-        deviceName: "zoho-transcriber"
-      }
+      content: html
     };
 
     const query = new URLSearchParams({
