@@ -23,11 +23,12 @@ export default async function handler(req, res) {
     }
 
     const webhookUrl = `https://${req.headers.host}/api/webhook`;
+    const action = req.query?.action === "CREATE" ? "CREATE" : "UPDATE";
     const registration = {
       resource_type: "NOTEBOOK",
       filter_type: "ID",
       filter_value: notebook.notebook_id,
-      action: "UPDATE",
+      action,
       url: webhookUrl,
     };
 
