@@ -36,6 +36,9 @@ function mcpHasError(body) {
   if (!body) return true;
   if (body.error) return true;
   if (body.result?.isError) return true;
+  if (body.result?.structuredContent?.status === "failure") return true;
+  const text = body.result?.content?.map((x) => x?.text || "").join(" ") || "";
+  if (/not authorised|not authorized|cannot perform this operation/i.test(text)) return true;
   return false;
 }
 
