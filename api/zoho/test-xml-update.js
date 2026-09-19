@@ -49,9 +49,11 @@ export default async function handler(req, res) {
       type: "html"
     });
 
+    const allowedFields = new Set(["content","data","resource","note","notecard","attachment","file","file_content","note_content","html"]);
+    const uploadField = allowedFields.has(req.query?.field) ? req.query.field : "file";
     const form = new FormData();
     form.append(
-      "file",
+      uploadField,
       new Blob([html], { type: "text/html" }),
       "note.html"
     );
@@ -69,6 +71,7 @@ export default async function handler(req, res) {
       ok:updateResponse.ok,
       notecard_id:card.notecard_id,
       status:updateResponse.status,
+      uploadField,
       body,
     });
   } catch (error) {
