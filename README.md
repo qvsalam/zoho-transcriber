@@ -16,3 +16,5 @@ Deployment is managed by Vercel from the main branch.
 Environment variables configured for production deployment.
 
 Zoho refresh token configured in Vercel production.
+
+One-minute cron fallback test enabled.
