@@ -42,7 +42,6 @@ export default async function handler(req, res) {
 
     const meta = {
       name: card.name || "Untitled",
-      color: card.color || "#FFFFFF",
       type: "note/mixed",
       content: html,
       version_notes: {
