@@ -23,7 +23,7 @@ function hasTranscript(content) {
 }
 
 function hasAudioMarker(content) {
-  return /<zaudiomarker\b/i.test(content);
+  return /<zaudio(?:marker)?\b/i.test(content);
 }
 
 function mcpHasError(body) {
