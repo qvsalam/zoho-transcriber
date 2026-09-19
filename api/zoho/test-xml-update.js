@@ -40,11 +40,29 @@ export default async function handler(req, res) {
       ? current
       : current.replace(/<\/content>\s*$/, marker + "</content>");
 
+    const meta = {
+      name: card.name || "Untitled",
+      color: card.color || "#FFFFFF",
+      type: "note/mixed",
+      version_notes: {
+        appName: "Vercel",
+        deviceName: "zoho-transcriber"
+      }
+    };
+
+    const query = new URLSearchParams({
+      JSONString: JSON.stringify(meta)
+    });
+
     const form = new FormData();
-    form.append("content", html);
+    form.append(
+      "attachment",
+      new Blob([html], { type: "text/html" }),
+      "note.html"
+    );
 
     const updateResponse = await zohoRequest(
-      `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}`,
+      `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}?${query.toString()}`,
       { method:"PUT", body:form }
     );
 
