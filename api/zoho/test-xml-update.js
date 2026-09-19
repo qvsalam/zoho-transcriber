@@ -5,12 +5,6 @@ function extractContent(xml) {
   return m ? m[1] : null;
 }
 
-function escapeXml(s = "") {
-  return String(s).replace(/[&<>"']/g, (ch) => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"
-  }[ch]));
-}
-
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   try {
@@ -38,35 +32,23 @@ export default async function handler(req, res) {
       `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}`
     );
     const xml = await detailResponse.text();
-    const content = extractContent(xml);
-    if (!content) throw new Error("Could not extract ZContent");
+    const current = extractContent(xml);
+    if (!current) throw new Error("Could not extract ZContent");
 
-    const newContent = content.replace(
-      /<\/content>\s*$/,
-      '<div data-vercel-test="1">Vercel update test</div></content>'
-    );
+    const marker = '<div data-vercel-test="1">Vercel update test</div>';
+    const html = current.includes('data-vercel-test="1"')
+      ? current
+      : current.replace(/<\/content>\s*$/, marker + "</content>");
 
-    const zNote = `<?xml version="1.0" encoding="UTF-8"?>
-<ZNote>
-  <ZMeta>
-    <ZTitle>${escapeXml(card.name || "Untitled")}</ZTitle>
-    <ZLocation><ZLongitude>0.0</ZLongitude><ZLatitude>0.0</ZLatitude><ZCity>Unknown</ZCity></ZLocation>
-    <ZNoteColor>${escapeXml(card.color || "#FFFFFF")}</ZNoteColor>
-    <ZNoteType typeVersion="1">note/mixed</ZNoteType>
-  </ZMeta>
-  <ZContent><![CDATA[${newContent}]]></ZContent>
-</ZNote>`;
+    const form = new FormData();
+    form.append("title", card.name || "Untitled");
+    form.append("note_type", "note/mixed");
+    form.append("note_color", card.color || "#FFFFFF");
+    form.append("content", html);
 
     const updateResponse = await zohoRequest(
       `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}`,
-      {
-        method:"PUT",
-        headers:{
-          "Content-Type":"application/xml",
-          "Accept":"application/json",
-        },
-        body:zNote,
-      }
+      { method:"PUT", body:form }
     );
 
     const text = await updateResponse.text();
