@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
     let text = await response.text();
 
-    if (!response.ok && [404, 405].includes(response.status)) {
+    if (!response.ok && [400, 404, 405].includes(response.status)) {
       response = await zohoRequest(
         `/notification/filtered/register?${query.toString()}`,
         { method: "POST" }
