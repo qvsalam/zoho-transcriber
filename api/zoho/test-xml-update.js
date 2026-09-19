@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     );
 
     const updateResponse = await zohoRequest(
-      `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}?${query.toString()}`,
+      `/notecards/${card.notecard_id}?${query.toString()}`,
       { method:"PUT", body: form }
     );
 
