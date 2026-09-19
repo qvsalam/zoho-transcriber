@@ -41,7 +41,6 @@ export default async function handler(req, res) {
       : current.replace(/<\/content>\s*$/, marker + "</content>");
 
     const form = new FormData();
-    form.append("title", card.name || "Untitled");
     form.append("content", html);
 
     const updateResponse = await zohoRequest(
