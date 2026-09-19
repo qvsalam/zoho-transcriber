@@ -58,7 +58,9 @@ export default async function handler(req, res) {
     if (!listResponse.ok) throw new Error("Could not list Zoho notecards");
 
     const candidates = (listBody.notecards || []).filter(
-      (n) => n.embed_resources?.some((r) => String(r.format || "").startsWith("audio/"))
+      (n) =>
+        n.type === "note/mixed" &&
+        n.embed_resources?.some((r) => String(r.format || "").startsWith("audio/"))
     );
 
     let card = null;
