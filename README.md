@@ -14,3 +14,5 @@ No API keys, OAuth tokens, client secrets, or personal notebook IDs belong in th
 Deployment is managed by Vercel from the main branch.
 
 Environment variables configured for production deployment.
+
+Zoho refresh token configured in Vercel production.
