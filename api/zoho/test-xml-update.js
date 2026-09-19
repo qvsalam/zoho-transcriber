@@ -44,10 +44,11 @@ export default async function handler(req, res) {
       name: card.name || "Untitled",
     };
 
+    const rawMode = req.query?.mode === "raw";
     const query = new URLSearchParams({
-      JSONString: JSON.stringify(meta),
-      type: "html"
+      JSONString: JSON.stringify(meta)
     });
+    if (!rawMode) query.set("type", "html");
 
     const allowedFields = new Set(["content","data","resource","note","notecard","attachment","file","file_content","note_content","html"]);
     const uploadField = allowedFields.has(req.query?.field) ? req.query.field : "file";
@@ -58,7 +59,6 @@ export default async function handler(req, res) {
       "note.html"
     );
 
-    const rawMode = req.query?.mode === "raw";
     const updateResponse = await zohoRequest(
       `/notecards/${card.notecard_id}?${query.toString()}`,
       rawMode
