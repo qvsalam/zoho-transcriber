@@ -48,9 +48,16 @@ export default async function handler(req, res) {
       JSONString: JSON.stringify(meta)
     });
 
+    const form = new FormData();
+    form.append(
+      "attachment",
+      new Blob([html], { type: "text/html" }),
+      "note.html"
+    );
+
     const updateResponse = await zohoRequest(
       `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}?${query.toString()}`,
-      { method:"PUT" }
+      { method:"PUT", body: form }
     );
 
     const text = await updateResponse.text();
