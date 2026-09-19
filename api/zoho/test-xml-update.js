@@ -44,6 +44,7 @@ export default async function handler(req, res) {
       name: card.name || "Untitled",
       color: card.color || "#FFFFFF",
       type: "note/mixed",
+      content: html,
       version_notes: {
         appName: "Vercel",
         deviceName: "zoho-transcriber"
@@ -54,16 +55,9 @@ export default async function handler(req, res) {
       JSONString: JSON.stringify(meta)
     });
 
-    const form = new FormData();
-    form.append(
-      "attachment",
-      new Blob([html], { type: "text/html" }),
-      "note.html"
-    );
-
     const updateResponse = await zohoRequest(
       `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}?${query.toString()}`,
-      { method:"PUT", body:form }
+      { method:"PUT" }
     );
 
     const text = await updateResponse.text();
