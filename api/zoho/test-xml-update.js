@@ -42,7 +42,6 @@ export default async function handler(req, res) {
 
     const meta = {
       name: card.name || "Untitled",
-      content: html
     };
 
     const query = new URLSearchParams({
