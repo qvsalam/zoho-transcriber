@@ -58,9 +58,12 @@ export default async function handler(req, res) {
       "note.html"
     );
 
+    const rawMode = req.query?.mode === "raw";
     const updateResponse = await zohoRequest(
       `/notecards/${card.notecard_id}?${query.toString()}`,
-      { method:"PUT", body: form }
+      rawMode
+        ? { method:"PUT", headers:{ "Content-Type":"text/html" }, body: html }
+        : { method:"PUT", body: form }
     );
 
     const text = await updateResponse.text();
@@ -72,6 +75,7 @@ export default async function handler(req, res) {
       notecard_id:card.notecard_id,
       status:updateResponse.status,
       uploadField,
+      mode: rawMode ? "raw" : "multipart",
       body,
     });
   } catch (error) {
