@@ -51,7 +51,7 @@ export default async function handler(req, res) {
 
     const form = new FormData();
     form.append(
-      "attachment",
+      "file",
       new Blob([html], { type: "text/html" }),
       "note.html"
     );
