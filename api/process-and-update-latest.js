@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     if (!listResponse.ok) throw new Error("Could not list Zoho notecards");
 
     const card = (listBody.notecards || []).find(
-      (n) => n.type === "note/audio" && n.embed_resources?.length
+      (n) => n.embed_resources?.some((r) => String(r.format || "").startsWith("audio/"))
     );
 
     if (!card) {
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
     const existingContent = extractContent(xml);
     if (!existingContent) throw new Error("Could not extract existing notecard content");
 
-    if (existingContent.includes('data-zoho-transcriber="1"')) {
+    if (/Transcript<\/b>/i.test(existingContent) || /Transcript \(Zoho Transcriber\)/i.test(existingContent)) {
       return res.status(200).json({
         ok: true,
         processed: false,
@@ -99,7 +99,9 @@ export default async function handler(req, res) {
       });
     }
 
-    const resource = card.embed_resources[0];
+    const resource = card.embed_resources.find(
+      (r) => String(r.format || "").startsWith("audio/")
+    );
     const audioResponse = await zohoRequest(
       `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}/resources/${resource.resource_id}`
     );
@@ -115,18 +117,20 @@ export default async function handler(req, res) {
 
     const file = await uploadToGemini(audio, mimeType, "zoho-audio.m4a");
     const transcript = await transcribeGeminiFile(file);
-    const updatedContent = appendTranscript(existingContent, transcript);
+    const transcriptHtml =
+      '<div><br></div>' +
+      '<div><b>Transcript</b></div>' +
+      '<div>' + escapeHtml(transcript) + '</div>';
 
     const mcpResult = await callZohoMcpTool(
-      "ZohoNotebook_createNotecardWithHtml",
+      "ZohoNotebook_appendHtmlToNotecard",
       {
+        path_variables: {
+          notecard_id: card.notecard_id,
+        },
         body: {
           JSONString: {
-            input: updatedContent,
-            notecard_id: card.notecard_id,
-            notebook_id: notebook.notebook_id,
-            name: card.name || "Untitled",
-            type: "note/mixed",
+            input: transcriptHtml,
             version_notes: { appName: "Zoho Transcriber" },
           },
         },
