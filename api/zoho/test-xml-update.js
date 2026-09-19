@@ -45,7 +45,8 @@ export default async function handler(req, res) {
     };
 
     const query = new URLSearchParams({
-      JSONString: JSON.stringify(meta)
+      JSONString: JSON.stringify(meta),
+      type: "html"
     });
 
     const form = new FormData();
