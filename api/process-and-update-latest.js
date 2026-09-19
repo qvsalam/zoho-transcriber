@@ -107,7 +107,7 @@ export default async function handler(req, res) {
       const noteContent = extractContent(xml);
       if (!noteContent) continue;
       if (!hasAudioMarker(noteContent)) continue;
-      if (hasTranscript(noteContent)) continue;
+      if (hasTranscript(candidate.description || "") || hasTranscript(noteContent)) continue;
 
       card = candidate;
       existingContent = noteContent;
