@@ -17,19 +17,9 @@ function escapeHtml(value = "") {
   }[ch]));
 }
 
-function appendTranscript(existing, transcript) {
-  const marker = "data-zoho-transcriber=\"1\"";
-  if (existing.includes(marker)) return existing;
-
-  const block =
-    '<div><br></div>' +
-    '<div ' + marker + '><b>Transcript</b></div>' +
-    '<div>' + escapeHtml(transcript) + '</div>';
-
-  if (/<\/content>\s*$/i.test(existing)) {
-    return existing.replace(/<\/content>\s*$/i, block + "</content>");
-  }
-  return existing + block;
+function hasTranscript(content) {
+  return /Transcript<\/b>/i.test(content) ||
+    /Transcript \(Zoho Transcriber\)/i.test(content);
 }
 
 function mcpHasError(body) {
@@ -67,9 +57,28 @@ export default async function handler(req, res) {
     const listBody = await listResponse.json();
     if (!listResponse.ok) throw new Error("Could not list Zoho notecards");
 
-    const card = (listBody.notecards || []).find(
+    const candidates = (listBody.notecards || []).filter(
       (n) => n.embed_resources?.some((r) => String(r.format || "").startsWith("audio/"))
     );
+
+    let card = null;
+    let existingContent = null;
+
+    for (const candidate of candidates) {
+      const detailResponse = await zohoRequest(
+        `/notebooks/${notebook.notebook_id}/notecards/${candidate.notecard_id}`
+      );
+      const xml = await detailResponse.text();
+      if (!detailResponse.ok) continue;
+
+      const content = extractContent(xml);
+      if (!content) continue;
+      if (hasTranscript(content)) continue;
+
+      card = candidate;
+      existingContent = content;
+      break;
+    }
 
     if (!card) {
       return res.status(200).json({
@@ -79,34 +88,17 @@ export default async function handler(req, res) {
       });
     }
 
-    const detailResponse = await zohoRequest(
-      `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}`
-    );
-    const xml = await detailResponse.text();
-    if (!detailResponse.ok) {
-      throw new Error(`Could not read Zoho notecard: ${detailResponse.status}`);
-    }
-
-    const existingContent = extractContent(xml);
-    if (!existingContent) throw new Error("Could not extract existing notecard content");
-
-    if (/Transcript<\/b>/i.test(existingContent) || /Transcript \(Zoho Transcriber\)/i.test(existingContent)) {
-      return res.status(200).json({
-        ok: true,
-        processed: false,
-        reason: "Transcript already exists",
-        notecard_id: card.notecard_id,
-      });
-    }
-
     const resource = card.embed_resources.find(
       (r) => String(r.format || "").startsWith("audio/")
     );
+
     const audioResponse = await zohoRequest(
       `/notebooks/${notebook.notebook_id}/notecards/${card.notecard_id}/resources/${resource.resource_id}`
     );
     if (!audioResponse.ok) {
-      throw new Error(`Zoho audio download failed: ${audioResponse.status} ${await audioResponse.text()}`);
+      throw new Error(
+        `Zoho audio download failed: ${audioResponse.status} ${await audioResponse.text()}`
+      );
     }
 
     const audio = await audioResponse.arrayBuffer();
@@ -117,10 +109,11 @@ export default async function handler(req, res) {
 
     const file = await uploadToGemini(audio, mimeType, "zoho-audio.m4a");
     const transcript = await transcribeGeminiFile(file);
+
     const transcriptHtml =
-      '<div><br></div>' +
-      '<div><b>Transcript</b></div>' +
-      '<div>' + escapeHtml(transcript) + '</div>';
+      "<div><br></div>" +
+      "<div><b>Transcript</b></div>" +
+      "<div>" + escapeHtml(transcript) + "</div>";
 
     const mcpResult = await callZohoMcpTool(
       "ZohoNotebook_appendHtmlToNotecard",
@@ -140,7 +133,7 @@ export default async function handler(req, res) {
     if (mcpHasError(mcpResult)) {
       return res.status(502).json({
         ok: false,
-        step: "update_notecard",
+        step: "append_transcript",
         notecard_id: card.notecard_id,
         transcript,
         mcpResult,
@@ -152,7 +145,8 @@ export default async function handler(req, res) {
       processed: true,
       notecard_id: card.notecard_id,
       transcript,
-      updatedVia: "Zoho Notebook MCP",
+      keptExistingContent: Boolean(existingContent),
+      updatedVia: "ZohoNotebook_appendHtmlToNotecard",
       mcpResult,
     });
   } catch (error) {
