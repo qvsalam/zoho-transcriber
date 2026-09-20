@@ -33,8 +33,10 @@ export default async function handler(req, res) {
     }
 
     const audio = await audioResponse.arrayBuffer();
-    const mimeType =
-      audioResponse.headers.get("content-type") || "audio/m4a";
+    const responseMimeType = audioResponse.headers.get("content-type") || "";
+    const mimeType = responseMimeType.startsWith("audio/")
+      ? responseMimeType
+      : "audio/m4a";
 
     const file = await uploadToGemini(audio, mimeType, "zoho-audio.m4a");
     const transcript = await transcribeGeminiFile(file);
